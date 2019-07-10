@@ -1,0 +1,374 @@
+*TCP/IP协议
+	TCP/IP5层模型
+	应用层
+	传输层
+		TCP:
+			建立连接：
+				三次握手
+			传输数据（双工）：
+				四次握手
+			断开连接：
+				四次断开
+		UDP:
+	网络层
+		IP协议
+	数据链路层
+		ARP：
+			概要：
+				通过目标IP地址查找相对于接收数据包的网络设备MAC地址，如果目标IP与发送端IP不在同一网段，可以通过ARP查找下一跳路由器的MAC地址。
+			工作方式：
+				ARP是借助ARP请求与ARP响应两种类型的包来确定MAC地址的。在首次进行数据传输时，发送端并不知道接收端设备的MAC地址。因此发送端会在同一链路上进行广播
+				ARP请求包，同一链路上的设备会解析ARP请求包，查看其中的目标IP是否是自己。如果不是则丢弃，如果是那么这个节点则返回一个ARP响应包，里面包含该节点的
+				MAC地址。同时双方在发送请求包和回应响应包时，交换机会记录他们的MAC地址与IP地址的对照关系，并将这种对照关系存入MAC地址表中，这样下一次传输时就无
+				须广播，而是直接查看MAC地址表直接获取IP地址。
+				发送流程：
+				查看MAC地址表
+					有IP地址对照的MAC地址；直接发送
+					没有对照关系；
+						先将发送端的IP地址与MAC地址对照关系写入MAC表中。
+						发送端进行广播，发送ARP请求包，包中有目标地址的IP地址信息。
+						接收到广播的各节点解析ARP请求包，查看目标IP是否是自己，不是；则将包丢弃。
+						是；则回应一个ARP回应包，包中有目标地址的MAC地址。
+						再将接收端的IP地址与MAC地址对照关系写入MAC表中。
+						根据MAC地址表，将响应包发给发送端。
+						发送端发送数据包。
+		RARP：
+			概要：
+				通过MAC地址查找相对于的IP地址。
+	
+	物理层
+
+*Shell
+
+*HTTP（工作模式，优化，事故）
+
+*Nginx（优化，安全）
+	1、nginx的安装
+		源码安装：
+			依赖：
+				pcre-devel、openssl-devel、gcc
+			configure安装配置文件：
+				可以指定安装路径、启动服务指定用户、添加/删除安装模块
+	2、nginx程序升级
+		源码安装，配置configure文件
+		只需要执行到make这一步即可
+		这样会在安装包目录生成一个nginx包
+		将包内的bbjs/nginx文件替换掉原来nginx目录下的sbin/nginx即可
+		在替换之前要给就/sbin/nginx做备份，避免覆盖之后服务无法启动
+		
+		程序升级的意义：
+			1、原先的程序版本出现重大漏洞，需要紧急修复
+			2、现在的程序出现问题，需要修复
+			3、新功能
+
+	3、自定义安装模块
+		安装前查看所有模块：
+			./configure --help
+				--without字样的模块会默认安装，without可以在安装时将他们禁用，
+				在后面的安全优化，和性能优化中，需要将一部分默认安装的模块禁用
+		安装完成后可以/usr/local/nginx/sbin/nginx -V查看安装的模块和各配置信息（根据configure文件的配置信息）
+		
+	4、动态加载模块
+		已经安装好的nginx，根据业务需求动态的添加模块
+			将nginx升级的步骤做一遍即可，需要注意备份和跟之前的配置信息保持一致
+	
+	5、nginx用户认证
+		修改nginx配置文件，添加如下配置：
+			vim /usr/local/nginx/conf/nginx.conf
+				http {
+				...
+					server {
+						listen 80;
+						...
+						#提示用户的信息
+						auth_basic "Input password";
+						#用户名和密码验证文件，需要自己创建
+						auth_basic_user_file "/usr/local/nginx/pass";
+					}
+				}
+	
+	6、nginx虚拟主机
+		虚拟主机，一个服务器，一个nginx，实现多个网站
+		
+		基于域名的虚拟主机：
+				修改nginx配置文件，添加如下配置：
+					#添加一个server{}块，设置server_name为新域名，这样可以根据用户访问的域名进行匹配
+					server {
+						listen 80;
+						server_name www.test2.com;
+						
+						location / {
+							root html;
+							#先查找file1文件是否存在，如果存在则返回file1页面，如果不存在就匹配下一个
+							try_files file1.html file2.html index.html;
+						}
+					}
+		基于ip地址的虚拟主机：
+		基于端口的虚拟主机：
+	
+	7、加密网站
+		需要模块:
+			--with-http_ssl_module模块
+		生成私钥与证书
+			cd /usr/local/nginx/conf
+			生成私钥：openssl genrsa > cert.key
+			生成证书：openssl req -new -x509 -key cert.key > cert.pem
+		修改配置文件：
+			#nginx配置文件中自带加密虚拟主机的配置，只需要删除注释，修改证书和私钥路径即可
+			vim +100 /usr/local/nginx/conf/nginx.conf
+				ssl_certificate cert.pem;
+				ssl_certificate_key cert.key;
+		访问测试：
+			https://127.0.0.1
+			
+	8、nginx反向代理：
+		目的：
+			让处于不同网段的服务器和客户端进行交流。客户端访问nginx调度服务器，调度服务器通过调度算法，将请求
+			转发给集群服务器处理；在集群服务器看来，是调度服务器发起的请求，所以讲相应资源返回给调度服务器，
+			调度服务器再将资源返回给客户端；在客户端看来，调度服务器就是web服务器。
+			
+		实验拓扑：
+		
+						   -------WEB服务器1
+		client----nginx代理
+						   -------WEB服务器2
+			
+		配置反向代理：
+			#创建集群池，添加服务器，指定服务端口，设置监听端口
+			vim /usr/local/nginx/conf
+				http {
+					upstream 集群池名 {
+						#指定调度算法，根据源地址hash计算，使相同ip始终访问同一台服务器，实现session共享
+						ip_hash;
+						#集群服务器，weight设置权重，max_fails设置连接时允许最大失败次数，fail_timeout超过
+						最大连接次数后，等待30秒再次尝试连接
+						server 服务器1IP:80 weight=1 max_fails=1 fail_timeout=30;
+						server 服务器2IP:80 weight=1 max_fails=1 fail_timeout=30;
+					}
+					server {
+					...
+					#将客户端的http服务请求转发给集群处理
+					proxy_pass http://集群池名;
+					}
+				}
+			重新加载nginx配置：
+				/usr/local/nginx/sbin/nginx -s reload
+			客户端测试：
+				curl http://调度服务器地址
+				
+			
+			
+	9、nginx实现四层TCP/UDP调度
+		正常的nginx调度只能实现第7层的http协议调度，而TCP/UDP是四层的传输协议，所以实现TCP/UDP的调度，
+		需要安装额外模块；四层可以使得nginx支持更多的运用，比如对ssh的调度。
+		但是四层调度功能只有nginx1.9之后的版本才支持。
+		
+		实验拓扑：
+		
+						   -------SSH服务器1
+		client----nginx代理
+						   -------SSH服务器2
+						   
+		需要模块：
+			--with-stream
+		修改配置文件：
+			#创建集群池，添加服务器，指定服务端口，设置监听端口
+			vim /usr/local/nginx/conf
+			#定义集群池
+			stream {
+				upstream 集群池名 {
+					server ssh服务器1地址:22;
+					server ssh服务器2地址:22;
+				}
+				
+				server {
+					listen 监听端口;
+					proxy_connect_timeout 1s;
+					proxy_timeout 3s;
+					#将请求交给集群处理
+					proxy_pass 集群池名;
+				}
+			}
+			http {
+			...
+			}
+		nginx重新加载配置文件
+			/usr/local/nginx/sbin/nginx -s reload
+		客户端访问测试
+			ssh 调度服务器地址 -p 监听端口
+			
+	10、nginx负载均衡
+		两个模块实现nginx负载均衡：
+			stream、proxy
+		stream：
+			定义集群池以及集群服务器
+			可以设置调度算法，实现负载均衡
+		proxy：
+			反向代理
+			将客户端的请求转发给服务器
+		
+	11、nginx常见错误代码及处理方案
+		302：
+		403：
+		499：
+		502：
+		504：
+		
+	12、nginx优化与安全
+		
+			
+*Tomcat
+
+*Lvs:
+	原理及组成:
+		原理:
+			客户端向DS发送访问服务请求
+			DS将请求发送至内核空间
+			PREROUNTING链首先接受到请求
+			确认请求的目标地址(VIP)是本机, 将请求发送给INPUT链
+			ipvs工作在INPUT链上,ipvs确认请求的服务与集群服务一致,强行修改请求包的目标地址和端口,发送给POSTROUTING链
+			POSTROUTING链根据目标地址(RIP)发送给服务器群组
+		组成:
+			由数据包处理,调度算法,系统管理与配置三个模块和虚拟服务器和真实服务器链表组成
+	三种工作模式:
+		NAT模式:
+			特性:
+				RS必须将网关设置为DS地址
+				所有的请求和回应都要经过DS,DS很容易成为瓶颈
+				RS和DS必须在同一网段
+			配置方法:
+				RS安装web服务器,并确保页面访问正常
+				RS设置网关为DS地址
+				DS确保内核开启路由转发功能,ip_forward=1
+				DS安装ipvsadm管理工具
+				添加调度规则,规则中调度服务器地址为VIP
+				将配置保存为永久,ipvsadm-save -n > /etc/sysconfig/ipvsadm
+		DR模式:
+			特性:
+				RS不允许网关指向DS
+			`	RS必须与DS在同一网络
+				RS和DS都要设置VIP
+				RS的VIP设置在回环网卡上
+				所有的请求必须经过DS调度服务器
+				所有的回应必须不经过DS调度服务器
+			配置方法:
+				RS安装web服务器,并确保页面访问正常
+				RS配置VIP在lo网卡上,复制lo网卡配置,命名为lo:0,修改IP为VIP,子网掩码32位
+				RS重启网络服务,查看网卡信息,systemctl restart network;ifconfig
+				RS上还需要修改网卡内核参数,arp_ignore=1,arp_announce=2
+					可以添加如下配置到/etc/sysctl.conf
+							net.ipv4.conf.lo.arp_ignore = 1
+							net.ipv4.conf.all.arp_ignore = 1
+							net.ipv4.conf.lo.arp_announce = 2
+							net.ipv4.conf.all.arp_announce = 2
+						然后sysctl -p重新加载配置
+					或者直接echo:
+							echo 1 > /proc/sys/net/ipv4/conf/lo/arp_ignore
+							echo 1 > /proc/sys/net/ipv4/conf/all/arp_ignore
+							echo 2 > /proc/sys/net/ipv4/conf/lo/arp_announce
+							echo 2 > /proc/sys/net/ipv4/conf/all/arp_announce
+		Tunnel模式:		
+	调度算法:
+		rr:轮训,依次循环调度到每台服务器上,缺点:如果服务器上的连接数不一样,就无法达到真正的负载均衡效果
+		wrr:带权重的轮训,如果某台服务器性能更好,可以设置权重使其接受更多请求,缺点:跟rr一样		
+		lc:最小连接,根据RS的连接数将请求发给连接数最少的服务器,缺点:无法使用session
+		sh:源地址哈希,根据源地址进行哈希算法,固定访问到同一台服务器,缺点:学校,公司这种大量请求的地方都是使用同一个IP,依然会导致调度不均匀
+		dh:目标地址哈希,为了实现资源的分类管理
+
+
+*Keepalived
+	防止单点故障:VRRP
+	工作原理:
+		检测每个服务器节点状态,服务器节点异常或工作出现故障,keepalived将故障节点从集群中删除,故障节点恢复后再重新将该节点加入集群
+		
+
+*Haproxy
+
+*Redis
+
+*Mysql
+
+*Iptables
+	rhel7以下版本使用iptables
+	四表:
+		filter:过滤表
+		raw:状态跟踪表
+		net:地址转换表
+		mangle:包标记表
+	五链
+		INPUT:进入
+		OUTPUT:出来
+		PREROUTING:路由前
+		POSTROUTING:路由后
+		FORWARD:转发
+	iptables包名:iptables-services
+	操作用法:
+		规则永久配置路径:
+			/etc/sysconfig/iptables-conf
+		修改链默认规则
+			iptables -t filter -P INPUT DROP
+			iptables -t raw -D
+			iptables 
+		封禁IP地址/网段
+			#针对入站
+			iptables -A INPUT-s 192.168.1.100 -j DROP
+			iptables -A INPUT -s 192.168.1.0/24 -j ACCEPT
+			#针对转发
+			iptables -A FORWARD -s 192.168.1.100 -j DROP
+			iptables -A FORWARD -s 192.168.1.0/24 -j ACCEPT
+		
+*Zabbix
+	安装zabbix:
+		基于LNMP环境
+	自定义监控项:
+		被监控的机器安装zabbix_agentd服务
+		修改配置文件允许自定义监控项,加载配置文件目录
+		在配置文件内书写监控key,监控的key可以使用脚本取值
+		创建模板,设置监控项,应用集关联监控主机等
+	zabbix报警:
+		短信:需要跟运营商购买服务
+		邮件:需要搭建邮件服务器
+		触发器监控,达到条件后执行动作,动作是根据报警媒介信息发送邮件到指定邮件服务器
+	自动发现:
+		设置发现规则,满足规则会执行动作,自动添加满足规则的主机到zabbix监控主机中
+	主被动监控:
+		主动监控:agentd主动向server发起连接,agentd获取需要检测的监控项,agentd自行开始收集数据
+		被动监控:server向agentd发起连接,发送监控key,agentd响应
+	
+*Docker
+
+*Openstack
+
+Ceph
+
+DNS域名
+
+网络项目
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
