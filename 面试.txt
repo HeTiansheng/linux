@@ -56,7 +56,31 @@
 			接收到HTTP请求时，
 		何为代理服务器:
 		什么事FastCGI:
+	
+	0、调优		
+		自定义错误页面:
+			error_page 404 /40x.html;
+		安装状态查询模块
+			页面解析:
+			配置状态页面限制本地访问:
+		并发量优化:
+			为什么要优化:
+			优化思路:
+				先优化work进程数量,设置为auto,自动根据cpu核心数开启相应work
+				然后优化每个work最大并发量,每个work最大并发量为65535,work最大并发量不能超过最大文件打开数,所以还需要优化linux系统的最大文件打开数量限制
+			具体配置:
+			vim /usr/local/nginx/conf/nginx.conf
+			worker_processes auto;
+			worker_connections 65535;
 			
+			内核参数优化:
+			ulimit -a     #查看所有属性值
+			ulimit -Hn 100000   #临时设置硬限制
+			ulimit -Sn 100000   #临时设置软限制
+			vim /etc/security/limits.conf    #永久设置
+				soft nofile 100000
+                         hard nofile 100000
+
 	1、nginx的安装
 		源码安装：
 			依赖：
