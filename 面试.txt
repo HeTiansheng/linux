@@ -88,15 +88,29 @@
 			error_page 404 /40x.html;
 		安装状态查询模块
 			页面解析:
+				#活跃连接数
+				Active connections:1   
+				#已经接受客户端的连接总数    已经回应客户端请求的总数     客户端发送的请求连接总数 
+				server                  accepts                 handled requests
+				4                              4                              6
+				#当前服务器正在读取客户端请求头的数量   当前服务器正在写响应信息的数量   当前有多少客户端等待服务端响应
+				Reading:0                        Writing:1                   Waiting:0
 			配置状态页面限制本地访问:
+				vim /usr/local/nginx/conf/nginx.conf
+					location /status {
+						allow 允许的IP1;
+						allow 允许的IP2;
+						deny all;#拒绝剩余所有
+					}
+
 		并发量优化:
 			worker_processes:worker进程数量
 			worker_connections:每个worker最大同时提供服务的客户端数量
 			两者结合可以获得每秒可以服务的最大客户端数:最大客户端数/秒=工作进程*worker数
 			为什么要优化:
-				
+				提高单台web服务器处理的访问量,提高资源利用率,节约成本
 			优化思路:
-				先优化worker进程数量,设置为auto,自动根据cpu核心数开启相应work
+				先优化worker进程数量,设置为auto,自动根据cpu核心数开启相应workS
 				然后优化每个worker最大并发量,每个work最大并发量为65535,work最大并发量不能超过最大文件打开数,所以还需要优化linux系统的最大文件打开数量限制
 			具体配置:
 			vim /usr/local/nginx/conf/nginx.conf
@@ -108,8 +122,50 @@
 			ulimit -Hn 100000   #临时设置硬限制
 			ulimit -Sn 100000   #临时设置软限制
 			vim /etc/security/limits.conf    #永久设置
-				soft nofile 100000
-                         hard nofile 100000
+			#    用户或组  硬限制或软限制		需要限制的项目		限制的值
+				* 	soft 			nofile 		100000
+                         * 	hard 			nofile 		100000
+		
+		优化nginx数据包头优化:
+			为什么要优化:
+				在nginx配置文件中,设置client_header_buffer_size和large_client_header_buffer_size的值,来规定nginx默认的header长度上限.
+				其中client_header_buffer_size是规定nginx默认的header上限
+				large_client_header_buffer_size则是当header超过默认长度之后的最大允许长度.
+					第一个参数为:最多允许几个超出默认长度的请求一起访问
+					第二个参数为:为每个请求开辟相应的缓存空间
+				
+				在实际环境中,如果请求的header都很大,那么应该直接设置client_header_buffer_size的值,这样能减少一次内存分配;如果只有少量请求的header很大,那么应该使用large_client_header_buffer_size,这样就只会在处理大header是才会分配更多内存空间,从而减少内存空间的浪费
+
+			如何优化:
+				vim /usr/local/nginx/conf/nginx.conf
+				http{
+					#默认请求包头信息的缓存
+					client_header_buffer_size 1k;
+					#大请求包头信息的缓存个数与容量
+					large_client_header_buffer_size 4 4k;
+				}
+		
+		浏览器本地缓存静态数据:
+			为什么要优化:
+				提高网站的访问速度(有了缓存,浏览器可以直接从本地调用资源,不需要请求服务器资源)
+				减轻服务器的负担(无需请求服务器资源,减轻了负担)
+			如何优化:
+				网站首页缓存1分钟,因为首页包含的链接和文件列表经常更新
+				文字类文章缓存一天,因为这类文章一旦写完就不会修改,同时缓存也占用空间,所以无需缓存太久
+				所有的图片类的都应该缓存30天以上,因为从磁盘检索图片是非常消耗资源的
+
+				配置文件:
+				vim /usr/local/nginx/conf/nginx.conf
+				location / {
+					expires 1m;				
+				}
+				location /articles {
+					expires 1d;
+				}
+				location ~*\.(img|jpg|gif)$ {
+					expires 30d;	
+				}
+
 		启用Gzip压缩:
 			
 
