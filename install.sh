@@ -66,6 +66,27 @@ redis_conf=/etc/redis/6379.conf
 }
 
 ####################################################################
+#功能:安装Zabbix,未实现
+####################################################################
+function install_zabbix(){
+	for i in ${ip[@]}
+	do
+		scp -r /linux-soft/03/Zabbix $i:/root/
+		ssh $i "LANG=en;growpart /dev/vda 1;xfs_growfs /dev/vda1"
+		ssh $i "yum -y install gcc openssl-devel pcre-devel php php-fpm php-mysql php-gd php-xml php-ldap php-bcmath php-mbstring mariadb mariadb-server mariadb-devel"
+		ssh $i "cd Zabbix/;tar -xf nginx-1.12.2.tar.gz;cd nginx-1.12.2/;./configure;make&&make install;ln -s /usr/local/nginx/sbin/nginx /sbin/nginx;nginx"
+		ssh $i "sed -i '/^http/a fastcgi_buffers 8 16k; \
+fastcgi_buffer_size 32k; \
+fastcgi_connect_timeout 300; \
+fastcgi_send_timeout 300; \
+fastcgi_read_timeout 300;' nginx.conf"
+		ssh $i ""
+
+
+	done
+}
+
+####################################################################
 #主函数:判断要安装的服务,并启动对应函数安装
 ####################################################################
 while true
@@ -84,6 +105,11 @@ do
 	"3")
 		echo 'instal redis'
 		install_redis
+		;;
+	"4")
+		echo 'install zabbix'
+		echo '未实现'
+		#install_zabbix
 		;;
 	"q")
 		exit 1
