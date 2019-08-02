@@ -1,0 +1,22 @@
+已学模块:
+	sys
+		sys.argv:将位置参数放到argv列表中
+	getpass
+
+	os模块:Python标准库中一个用于访问操作系统功能的模块,使用os模块中提供的接口,可以实现跨平台访问.
+		# list = os.system('ls /')
+		# print(list)
+		# print(os.name)
+		# print(os.getcwdb())
+		# print(os.path)
+		# print(os.listdir('/'))
+		# os.chdir('/root/')
+		# print(os.getcwd())
+		# #判断文件或目录是否存在,存在返回true,不存在返回false
+		# print(os.path.exists('/root1'))
+		# #判断是否为文件,是返回true,不是返回false
+		# print(os.path.isfile('/root'))
+		# #判断是否为目录
+		# print(os.path.isdir('/root/'))
+
+		
