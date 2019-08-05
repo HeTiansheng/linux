@@ -23,8 +23,8 @@ def check_web() :
     if os.path.exists('/etc/init.d/functions') == False :
         print('/etc/init.d/functions文件不存在')
         exit()
-    http_state = subprocess.run('nc -zw 5 %s %s' %(url, port) , shell=True).returncode
-    if http_state == 0:
+    #http_state = subprocess.run('nc -zw 5 %s %s' %(url, port) , shell=True).returncode
+    #if http_state == 0:
 
     #http_state = os.system('nc -zw 5 %s %s &> /dev/null' %(url, port))
     #if http_state == 0:
@@ -37,6 +37,9 @@ def check_web() :
 
     #http_state = int(subprocess.run('curl -I %s 2> /dev/null | egrep "200|301|302" | wc -l' %(url), shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE).stdout)
     #if http_state == 1 :
+
+    http_state = int(subprocess.run('curl -s -o /dev/null -w %s %s' %("%{http_code}", url), shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE).stdout)
+    if http_state == 200 :
 
         os.system('. /etc/init.d/functions;action "%s %s" /bin/true' %(url, port))
     else :
