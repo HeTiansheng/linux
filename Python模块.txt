@@ -1,3 +1,31 @@
+Python官方文档:
+docs.python.org
+
+python书写规范格式:
+#/usr/local/bin/python    #声明解释器
+
+"""模块名称
+模块说明,用于帮助
+"""
+
+import os                 #模块导入部分
+import string
+
+debug = True              #全局变量定义部分
+_all_string = 'aaaaa'
+
+class MyClass :           #类的声明部分
+	pass
+
+def my_func() :           #函数声明部分
+	pass
+
+if __name__ == '__main__' :  #程序主体代码
+	mc = MyClass()
+	my_func()
+
+
+
 已学模块:
 	sys
 		sys.argv:将位置参数放到argv列表中
@@ -18,5 +46,22 @@
 		# print(os.path.isfile('/root'))
 		# #判断是否为目录
 		# print(os.path.isdir('/root/'))
-
 		
+
+	string模块:
+		printable:变量含所有可打印字符
+
+	shutil模块:复制和移动文件
+		move:移动文件或目录
+		copytree:复制目录
+		copy2:相当于cp -p
+		copy:复制文件
+		chown:修改文件属组和属主
+		rmtree:只能删除空目录
+	subprocess模块:用于执行系统命令
+		run:执行系统命令
+			subprocess.run('ls ~', shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+				shell=True:用shell的环境变量
+				stdout=subprocess.PIPE:获取正确输出,赋值给stdout,固定写法
+				stderr=subprocess.PIPE:获取错误输出,赋值给stderr,固定写法
+		returncode:获取命令的执行状态值

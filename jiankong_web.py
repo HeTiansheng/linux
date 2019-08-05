@@ -1,5 +1,6 @@
 import os
 import time
+import subprocess
 
 ###################################################################
 #检测指定网站指定端口是否存活,存活输出ok,不存活输出error
@@ -35,3 +36,5 @@ import time
 # # if file_state == False:
 # #     print('ok')
 #####################################################################
+http_state = subprocess.run('nc -zw 5 www.baidu.com 80', shell=True)
+print(http_state.returncode)
