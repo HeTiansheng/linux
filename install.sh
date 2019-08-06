@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #IP地址池
-ip=("192.168.1.76" "192.168.1.77" "192.168.1.78" "192.168.1.79" "192.168.1.80" "192.168.1.81")
+ip=("192.168.1.100")
 
 ####################################################################
 #功能:安装并启动MySQL
@@ -66,23 +66,46 @@ redis_conf=/etc/redis/6379.conf
 }
 
 ####################################################################
-#功能:安装Zabbix,未实现
+#功能:安装Zabbix
 ####################################################################
 function install_zabbix(){
 	for i in ${ip[@]}
 	do
 		scp -r /linux-soft/03/Zabbix $i:/root/
 		ssh $i "LANG=en;growpart /dev/vda 1;xfs_growfs /dev/vda1"
-		ssh $i "yum -y install gcc openssl-devel pcre-devel php php-fpm php-mysql php-gd php-xml php-ldap php-bcmath php-mbstring mariadb mariadb-server mariadb-devel"
-		ssh $i "cd Zabbix/;tar -xf nginx-1.12.2.tar.gz;cd nginx-1.12.2/;./configure;make&&make install;ln -s /usr/local/nginx/sbin/nginx /sbin/nginx;nginx"
-		ssh $i "sed -i '/^http/a fastcgi_buffers 8 16k; \
-fastcgi_buffer_size 32k; \
-fastcgi_connect_timeout 300; \
-fastcgi_send_timeout 300; \
-fastcgi_read_timeout 300;' nginx.conf"
-		ssh $i ""
 
+		ssh $i "yum -y install gcc openssl-devel pcre-devel"
+		ssh $i "yum -y install php php-fpm php-mysql php-gd php-xml php-ldap php-bcmath php-mbstring"
+		ssh $i "yum -y install mariadb mariadb-server mariadb-devel"
+		ssh $i "yum -y install libevent-devel net-snmp-devel curl-devel"
 
+		ssh $i "cd Zabbix/;tar -xf nginx-1.12.2.tar.gz"
+		ssh $i "cd /root/Zabbix/nginx-1.12.2/;./configure;make&&make install"
+		ssh $i "ln -s /usr/local/nginx/sbin/nginx /sbin/nginx"
+		scp /root/nginx.conf $i:/usr/local/nginx/conf/
+		ssh $i "cd /root/Zabbix/zabbix-3.4.4/frontends/php;cp -r ./* /usr/local/nginx/html/"
+		ssh $i "chmod -R 777 /usr/local/nginx/html/*;nginx"
+
+		ssh $i "sed -i '384c max_execution_time = 300' /etc/php.ini; \
+sed -i '394c max_input_time = 300' /etc/php.ini; \
+sed -i '672c post_max_size = 32M' /etc/php.ini; \
+sed -i '878c date.timezone = Asia/Shanghai' /etc/php.ini"
+		ssh $i "systemctl restart php-fpm;systemctl enable php-fpm"
+
+		ssh $i "systemctl restart mariadb.service"
+		ssh $i "mysql -e 'create database zabbix character set utf8;'"
+		ssh $i "mysql -e \"grant all on zabbix.* to zabbix@localhost identified by 'zabbix';\""
+		ssh $i "mysql -uzabbix -pzabbix zabbix < /root/Zabbix/zabbix-3.4.4/database/mysql/schema.sql"
+		ssh $i "mysql -uzabbix -pzabbix zabbix < /root/Zabbix/zabbix-3.4.4/database/mysql/images.sql"
+		ssh $i "mysql -uzabbix -pzabbix zabbix < /root/Zabbix/zabbix-3.4.4/database/mysql/data.sql"
+		ssh $i "systemctl restart mariadb.service;systemctl enable mariadb.service"
+
+		ssh $i "cd /root/Zabbix;tar -xf zabbix-3.4.4.tar.gz;"
+		ssh $i "cd /root/Zabbix/zabbix-3.4.4;./configure --enable-server --enable-agent --enable-proxy --with-mysql=/usr/bin/mysql_config --with-net-snmp --with-libcurl;make install"
+		ssh $i "sed -i '/DBUser=zabbix/a DBPassword=zabbix' /usr/local/etc/zabbix_server.conf"
+		ssh $i "sed -i '/# DBHost=localhost/c DBHost=localhost' /usr/local/etc/zabbix_server.conf"
+		ssh $i "useradd -s /sbin/nologin zabbix"
+		ssh $i "zabbix_server"
 	done
 }
 
@@ -91,7 +114,7 @@ fastcgi_read_timeout 300;' nginx.conf"
 ####################################################################
 while true
 do
-	echo -e "请输入你要安装的服务\n1.MySQL\n2.Nginx\n3.redis\n输入q退出"
+	echo -e "请输入你要安装的服务\n1.MySQL\n2.Nginx\n3.redis\n4.Zabbix\n输入q退出"
 	read -p ':' num
 	case $num in
 	"1")
@@ -109,7 +132,7 @@ do
 	"4")
 		echo 'install zabbix'
 		echo '未实现'
-		#install_zabbix
+		install_zabbix
 		;;
 	"q")
 		exit 1
