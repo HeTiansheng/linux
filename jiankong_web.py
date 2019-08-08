@@ -1,20 +1,14 @@
+#/usr/local/bin/python
+
+"""监控web服务器
+通过访问页面,监听端口等方式确认web服务器是否存活
+"""
+
 import os
 import time
 import subprocess
 
-###################################################################
-#检测指定网站指定端口是否存活,存活输出ok,不存活输出error
-# http_url = input('请输入想检测的网站url:')
-# http_port = input('请输入网站端口:')
-# http_stat = os.system('nc -zw 5 %s %s' %(http_url,http_port))
-# # http_stat = os.system('nc -zw 5 www.chengbi.cn 80')
-# if http_stat == 0 :
-#     os.system('. /etc/init.d/functions;action ok /bin/true')
-#     # print('\033[32;1mok\033[0m')
-# else :
-#     os.system('. /etc/init.d/functions;action error /bin/false')
-#     # print('\033[31;1merror\033[0m')
-#####################################################################
+#--------------------------------------------------------------------------------------------------------------------------------------------
 url = '127.0.0.1'
 port = '80'
 # 函数功能:
@@ -42,11 +36,41 @@ def check_web() :
     if http_state == 200 :
 
         os.system('. /etc/init.d/functions;action "%s %s" /bin/true' %(url, port))
+        #subprocess.run('. /etc/init.d/functions;action "%s %s" /bin/true' %(url, port), shell=Tru)
     else :
         os.system('. /etc/init.d/functions;action "%s %s" /bin/false' %(url, port))
+        #subprocess.run('. /etc/init.d/functions;action "%s %s" /bin/false' %(url, port), shell=True)
 
 if __name__ == '__main__':
     while True :
         check_web()
         time.sleep(60)
-#####################################################################
+
+#--------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+#检测指定网站指定端口是否存活,存活输出ok,不存活输出error
+# http_url = input('请输入想检测的网站url:')
+# http_port = input('请输入网站端口:')
+# http_stat = os.system('nc -zw 5 %s %s' %(http_url,http_port))
+# # http_stat = os.system('nc -zw 5 www.chengbi.cn 80')
+# if http_stat == 0 :
+#     os.system('. /etc/init.d/functions;action ok /bin/true')
+#     # print('\033[32;1mok\033[0m')
+# else :
+#     os.system('. /etc/init.d/functions;action error /bin/false')
+#     # print('\033[31;1merror\033[0m')
+#--------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+

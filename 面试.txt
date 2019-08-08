@@ -106,6 +106,7 @@ Linux
 			配置状态页面限制本地访问:
 				vim /usr/local/nginx/conf/nginx.conf
 					location /status {
+						stub_status on;
 						allow 允许的IP1;
 						allow 允许的IP2;
 						deny all;#拒绝剩余所有

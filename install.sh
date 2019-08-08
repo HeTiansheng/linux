@@ -1,7 +1,9 @@
 #!/bin/bash
 
 #IP地址池
-ip=("192.168.1.100")
+ip=("192.168.2.2" "192.168.2.3")
+#linux-soft文件所在路径
+soft_path='/root/linux-soft'
 
 ####################################################################
 #功能:安装并启动MySQL
@@ -9,8 +11,7 @@ ip=("192.168.1.100")
 function install_mysqld(){
 	for i in ${ip[@]}
 	do
-		scp /linux-soft/03/mysql/mysql-5.7.17.tar $i:/root
-		ssh $i "LANG=en;growpart /dev/vda 1;xfs_growfs /dev/vda1"
+		scp ${soft_path}/03/mysql/mysql-5.7.17.tar $i:/root
 		ssh $i "tar -xf mysql-5.7.17.tar"
 		ssh $i "yum -y install mysql-community-*.rpm"
 		ssh $i "systemctl restart mysqld;systemctl enable mysqld"
@@ -23,8 +24,7 @@ function install_mysqld(){
 function install_nginx(){
 	for i in ${ip[@]}
 	do
-		scp /linux-soft/02/lnmp_soft/nginx-1.12.2.tar.gz $i:/root/
-		ssh $i "LANG=en;growpart /dev/vda 1;xfs_growfs /dev/vda1"
+		scp ${soft_path}/02/lnmp_soft/nginx-1.12.2.tar.gz $i:/root/
 		ssh $i "yum -y install gcc pcre-devel openssl-devel"
 		ssh $i "tar -xf /root/nginx-1.12.2.tar.gz"
 		ssh $i "cd /root/nginx-1.12.2;./configure --prefix=/usr/local/nginx --with-http_ssl_module --with-stream;make&&make install"
@@ -43,8 +43,7 @@ redis_conf=/etc/redis/6379.conf
 	for i in ${ip[@]}
 	do
 		host_ip=${i##*.}
-		scp -r /linux-soft/03/redis $i:/root/
-		ssh $i "LANG=en;growpart /dev/vda 1;xfs_growfs /dev/vda1"
+		scp -r ${soft_path}/03/redis $i:/root/
 		ssh $i "yum -y install gcc"
 		ssh $i "cd redis;tar -xf redis-4.0.8.tar.gz"
 		ssh $i "cd /root/redis/redis-4.0.8;make&&make install"
@@ -66,13 +65,12 @@ redis_conf=/etc/redis/6379.conf
 }
 
 ####################################################################
-#功能:安装Zabbix
+#功能:安装Zabbix Server端
 ####################################################################
 function install_zabbix(){
 	for i in ${ip[@]}
 	do
-		scp -r /linux-soft/03/Zabbix $i:/root/
-		ssh $i "LANG=en;growpart /dev/vda 1;xfs_growfs /dev/vda1"
+		scp -r ${soft_path}/03/Zabbix $i:/root/
 
 		ssh $i "yum -y install gcc openssl-devel pcre-devel"
 		ssh $i "yum -y install php php-fpm php-mysql php-gd php-xml php-ldap php-bcmath php-mbstring"
@@ -110,32 +108,98 @@ sed -i '878c date.timezone = Asia/Shanghai' /etc/php.ini"
 }
 
 ####################################################################
-#主函数:判断要安装的服务,并启动对应函数安装
+#功能:安装Zabbix agent客户端
 ####################################################################
-while true
-do
-	echo -e "请输入你要安装的服务\n1.MySQL\n2.Nginx\n3.redis\n4.Zabbix\n输入q退出"
-	read -p ':' num
-	case $num in
-	"1")
-		echo 'install mysqld'
-		install_mysqld
-		;;
-	"2")
-		echo 'install nginx'
-		install_nginx
-		;;
-	"3")
-		echo 'instal redis'
-		install_redis
-		;;
-	"4")
-		echo 'install zabbix'
-		echo '未实现'
-		install_zabbix
-		;;
-	"q")
+function install_zabbix_agent(){
+	for i in ${ip[@]}
+	do
+		scp -r ${soft_path}/03/Zabbix $i:/root/
+                ssh $i "yum -y install gcc openssl-devel pcre-devel"
+
+		ssh $i "useradd -s /sbin/nologin zabbix"
+		ssh $i "tar -xf /root/Zabbix/zabbix-3.4.4.tar.gz -C /root/"
+		ssh $i "cd /root/zabbix-3.4.4;./configure --enable-agent;make install"
+
+		ssh $i "sed -i '93c Server=127.0.0.1,192.168.1.100' /usr/local/etc/zabbix_agentd.conf"
+		ssh $i "sed -i '134c ServerActive=127.0.0.1,192.168.1.100' /usr/local/etc/zabbix_agentd.conf"
+		ssh $i 'sed -i "145c Hostname=$HOSTNAME" /usr/local/etc/zabbix_agentd.conf'
+		ssh $i "sed -i '69c EnableRemoteCommands=1' /usr/local/etc/zabbix_agentd.conf"
+		ssh $i "sed -i '280c UnsafeUserParameters=1' /usr/local/etc/zabbix_agentd.conf"
+
+		ssh $i "zabbix_agentd"
+	done
+}
+
+####################################################################
+#菜单函数:判断要安装的服务,并启动对应函数安装
+####################################################################
+function menu(){
+	while true
+	do
+		clear
+		echo -e "请输入你要安装的服务\n1.MySQL\n2.Nginx\n3.redis\n4.Zabbix_Server\n5.Zabbix_agent\n输入q退出"
+		read -p ':' num
+		case $num in
+		"1")
+			echo 'install mysqld'
+			install_mysqld
+			;;
+		"2")
+			echo 'install nginx'
+			install_nginx
+			;;
+		"3")
+			echo 'instal redis'
+			install_redis
+			;;
+		"4")
+			echo 'install zabbix_server'
+			install_zabbix
+			;;
+		"5")
+			echo 'install zabbix_agent'
+			install_zabbix_agent
+			;;
+		"q")
+			exit 0
+			;;
+		esac
+	done
+}
+function init(){
+	clear
+
+	read -p '是否需要磁盘扩容[y/n]:' disk_flag
+
+	echo '将会被安装服务的IP为：'
+	for i in ${ip[@]}
+	do
+		if [ `ping -w 3 -c 2 $i &> /dev/null;echo $?` -eq 0 ];then 
+			echo -e "$i\t\033[32m[ok]\033[0m"
+		else 
+			echo -e "$i\t\033[31m[error]\033[0m"
+		fi
+	done
+
+	read -p '是否继续执行安装[y/n]' flag
+	if [ ${flag} = 'n' ];then
 		exit 1
-		;;
-	esac
-done
+	elif [ ${flag} = 'y' ];then
+		if [ ${disk_flag} = 'y' ];then
+			echo '磁盘初始化过程-----------------------------------'
+			#for i in ${ip[@]}
+        		#do
+			#	ssh $i "LANG=en;growpart /dev/vda 1;xfs_growfs /dev/vda1"
+			#done
+		fi
+		[ ! -d ${soft_path} ] && echo "${soft_path}目录不存在" && exit 2 || menu
+	else
+		echo '输入有误'
+		exit 1
+	fi
+	
+}
+####################################################################
+#主函数
+####################################################################
+init
