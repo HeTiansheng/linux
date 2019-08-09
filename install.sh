@@ -125,6 +125,7 @@ function install_zabbix_agent(){
 		ssh $i 'sed -i "145c Hostname=$HOSTNAME" /usr/local/etc/zabbix_agentd.conf'
 		ssh $i "sed -i '69c EnableRemoteCommands=1' /usr/local/etc/zabbix_agentd.conf"
 		ssh $i "sed -i '280c UnsafeUserParameters=1' /usr/local/etc/zabbix_agentd.conf"
+		ssh $i "sed -i '264c Include=/usr/local/etc/zabbix_agentd.conf.d/' /usr/local/etc/zabbix_agentd.conf"
 
 		ssh $i "zabbix_agentd"
 	done
