@@ -20,8 +20,8 @@ def check_web() :
     #http_state = subprocess.run('nc -zw 5 %s %s' %(url, port) , shell=True).returncode
     #if http_state == 0:
 
-    #http_state = os.system('nc -zw 5 %s %s &> /dev/null' %(url, port))
-    #if http_state == 0:
+    # http_state = os.system('nc -zw 5 %s %s &> /dev/null' %(url, port))
+    # if http_state == 0:
 
     #http_state = int(subprocess.run("echo -e '\n' | telnet %s %s | grep 'Connected' | wc -l" %(url, port), shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE).stdout)
     #if http_state == 1:
