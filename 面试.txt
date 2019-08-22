@@ -518,17 +518,20 @@ Linux
 	操作用法:
 		规则永久配置路径:
 			/etc/sysconfig/iptables-conf
-		修改链默认规则
+		修改链默认规则:
 			iptables -t filter -P INPUT DROP
 			iptables -t raw -D
 			iptables 
-		封禁IP地址/网段
+		封禁IP地址/网段:
 			#针对入站
 			iptables -A INPUT-s 192.168.1.100 -j DROP
 			iptables -A INPUT -s 192.168.1.0/24 -j ACCEPT
 			#针对转发
 			iptables -A FORWARD -s 192.168.1.100 -j DROP
 			iptables -A FORWARD -s 192.168.1.0/24 -j ACCEPT
+		端口转发:
+			#将访问192.168.1.254 80端口的请求转发给192.168.1.3 80端口
+			iptables -t nat -A PREROUTING -d 192.168.1.254 -p tcp --dport 80 -j DNAT --to-destination 192.168.1.3:80
 ##################################################################################################
 		
 *Zabbix
