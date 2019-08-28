@@ -5,7 +5,7 @@ import hashlib
 import tarfile
 
 def has_new_ver(ver_url, ver_fname):
-    "有新版本返回True，否则返回False"
+    # "有新版本返回True，否则返回False"
     # 本地没有版本文件，返回True
     if not os.path.exists(ver_fname):
         return True
@@ -24,7 +24,7 @@ def has_new_ver(ver_url, ver_fname):
         return True
 
 def check_app(md5_url, fname):
-    "校验软件包，未损坏返回True，损坏返回False"
+    # "校验软件包，未损坏返回True，损坏返回False"
     # 计算本地md5值
     m = hashlib.md5()
     # 每次读取4096个字节,加快计算速度,在计算大文件时很有效果
@@ -45,7 +45,7 @@ def check_app(md5_url, fname):
         return False
 
 def deploy(app_fname, deploy_dir):
-    "部署软件：解压、创建链接"
+    # "部署软件：解压、创建链接"
     # 解压缩
     # 存放业务代码包绝对路径
     tar = tarfile.open(app_fname)
