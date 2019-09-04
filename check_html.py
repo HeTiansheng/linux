@@ -4,7 +4,6 @@ import hashlib
 import tarfile
 import re
 
-
 def init(html_dir, last_md5_log, last_html_tar):
     """
     初始化MD5文件和压缩包文件
